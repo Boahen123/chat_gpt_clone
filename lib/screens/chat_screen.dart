@@ -1,12 +1,19 @@
-import 'package:chat_gpt_clone/constants/chats.dart';
+import 'dart:developer';
+
+// import 'package:chat_gpt_clone/constants/chats.dart';
 import 'package:chat_gpt_clone/constants/colors.dart';
+import 'package:chat_gpt_clone/models/chat_model.dart';
+// import 'package:chat_gpt_clone/models/ai_models_model.dart';
+// import 'package:chat_gpt_clone/providers/api_provider.dart';
+import 'package:chat_gpt_clone/providers/drop_down_provider.dart';
 import 'package:chat_gpt_clone/services/api_service.dart';
+// import 'package:chat_gpt_clone/services/api_service.dart';
 import 'package:chat_gpt_clone/services/assets_manager.dart';
 import 'package:chat_gpt_clone/services/services.dart';
 import 'package:chat_gpt_clone/widgets/chat_widget.dart';
 // import 'package:chat_gpt_clone/widgets/response_widget.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
+// import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 
@@ -18,12 +25,16 @@ class ChatScreen extends ConsumerStatefulWidget {
 }
 
 class _ChatScreenState extends ConsumerState<ChatScreen> {
-  bool isTyping = true;
+  bool isTyping = false;
   late TextEditingController textEditingController;
+  late FocusNode focusNode;
+  late ScrollController listScrollController;
 
   @override
   void initState() {
     textEditingController = TextEditingController();
+    listScrollController = ScrollController();
+    focusNode = FocusNode();
     super.initState();
   }
 
@@ -31,10 +42,15 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   void dispose() {
     super.dispose();
     textEditingController.dispose();
+    focusNode.dispose();
+    listScrollController.dispose();
   }
 
+  List<ChatModel> chatList = [];
   @override
   Widget build(BuildContext context) {
+    final dropdown = ref.watch(dropdownProvider.notifier);
+
     return Scaffold(
         appBar: AppBar(
           leading: Padding(
@@ -59,11 +75,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             children: [
               Flexible(
                 child: ListView.builder(
-                    itemCount: 2,
+                    controller: listScrollController,
+                    itemCount: chatList.length,
                     itemBuilder: (context, index) {
                       return ChatWidget(
-                          msg: chatMessages[index]["msg"],
-                          chatIndex: chatMessages[index]["chatIndex"]);
+                          msg: chatList[index].msg,
+                          chatIndex: chatList[index].chatIndex);
                     }),
               ),
               if (isTyping) ...[
@@ -82,10 +99,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                   child: Row(children: [
                     Expanded(
                       child: TextField(
+                        focusNode: focusNode,
                         style: const TextStyle(color: Colors.white),
                         controller: textEditingController,
-                        onSubmitted: (value) {
-                          print('message sent $value');
+                        onSubmitted: (value) async {
+                          await sendMessage(provider: dropdown);
                         },
                         decoration: const InputDecoration.collapsed(
                             hintText: 'How can I help?',
@@ -94,11 +112,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                     ),
                     IconButton(
                         onPressed: () async {
-                          // try {
-                          //   await ApiService.getModels();
-                          // } catch (error) {
-                          //   print(error);
-                          // }
+                          await sendMessage(provider: dropdown);
                         },
                         icon: const Icon(
                           Icons.send,
@@ -110,5 +124,35 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             ],
           )),
         ));
+  }
+
+  void scrollDownToEnd() {
+    listScrollController.animateTo(
+        listScrollController.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut);
+  }
+
+  Future<void> sendMessage({required StateController<String> provider}) async {
+    log("Request sent");
+    try {
+      setState(() {
+        isTyping = true;
+        chatList.add(ChatModel(msg: textEditingController.text, chatIndex: 0));
+        textEditingController.clear();
+        focusNode.unfocus();
+        scrollDownToEnd();
+      });
+
+      chatList.addAll(await ApiService.sendPrompt(
+          provider.state, textEditingController.text));
+      setState(() {});
+    } catch (error) {
+      log(error.toString());
+    } finally {
+      setState(() {
+        isTyping = false;
+      });
+    }
   }
 }
