@@ -1,10 +1,12 @@
 import 'package:chat_gpt_clone/constants/chats.dart';
 import 'package:chat_gpt_clone/constants/colors.dart';
+import 'package:chat_gpt_clone/services/api_service.dart';
 import 'package:chat_gpt_clone/services/assets_manager.dart';
 import 'package:chat_gpt_clone/services/services.dart';
 import 'package:chat_gpt_clone/widgets/chat_widget.dart';
 // import 'package:chat_gpt_clone/widgets/response_widget.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 
@@ -45,7 +47,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           actions: [
             IconButton(
                 onPressed: () async {
-                  Services.showModal(context);
+                  await Services.showModal(context);
                 },
                 icon: const Icon(Icons.more_vert_rounded))
           ],
@@ -80,7 +82,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                   child: Row(children: [
                     Expanded(
                       child: TextField(
-                        style: const TextStyle(color: Colors.grey),
+                        style: const TextStyle(color: Colors.white),
                         controller: textEditingController,
                         onSubmitted: (value) {
                           print('message sent $value');
@@ -91,7 +93,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                       ),
                     ),
                     IconButton(
-                        onPressed: () {},
+                        onPressed: () async {
+                          // try {
+                          //   await ApiService.getModels();
+                          // } catch (error) {
+                          //   print(error);
+                          // }
+                        },
                         icon: const Icon(
                           Icons.send,
                           color: Colors.white,

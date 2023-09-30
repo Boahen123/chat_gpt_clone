@@ -43,6 +43,7 @@ class ChatWidget extends ConsumerWidget {
                         children: [
                           Icon(
                             Icons.thumb_up_alt_outlined,
+                            fill: 1.0,
                             color: Colors.white,
                           ),
                           SizedBox(

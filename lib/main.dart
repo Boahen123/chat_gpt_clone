@@ -2,9 +2,11 @@ import 'package:chat_gpt_clone/constants/colors.dart';
 // import 'package:chat_gpt_clone/providers/theme_mode.dart';
 import 'package:chat_gpt_clone/screens/chat_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-void main() {
+void main() async {
+  await dotenv.load(fileName: ".env");
   runApp(const ProviderScope(child: MyApp()));
 }
 
